@@ -39,7 +39,7 @@ namespace TechnicalSupport.FrontEnd
         {
             public const string Type = nameof(SupportCase);
             public const string Id = nameof(Id);
-            public const string Summary = nameof(Summary);
+            public const string CaseSummary = nameof(CaseSummary);
             public const string Content = nameof(Content);
             public const string Status  = nameof(Status);
         }
