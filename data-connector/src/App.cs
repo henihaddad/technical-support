@@ -11,6 +11,7 @@ using UID;
 using System.Text.RegularExpressions;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using System.Net.Http;
 
 string token = Environment.GetEnvironmentVariable("CURIOSITY_API_TOKEN");
 string endpointToken = Environment.GetEnvironmentVariable("CURIOSITY_ENDPOINTS_TOKEN");
@@ -35,7 +36,11 @@ using (var graph = Graph.Connect("http://localhost:8080/", token, "Curiosity Con
 
         logger.LogInformation("Ingesting data");
         await UploadDataAsync(graph);
-        logger.LogInformation("Done");
+        logger.LogInformation("Done with local data");
+
+        logger.LogInformation("Ingesting STAPI data");
+        await UploadStapiDataAsync(graph);
+        logger.LogInformation("Done with STAPI data");
 
         var response = await graph.QueryAsync(q => q.StartAt(nameof(Nodes.Device)).EmitCount("C"));
         var count = response.GetEmittedCount("C");
@@ -69,6 +74,9 @@ async Task CreateSchemasAsync(Graph graph)
     await graph.CreateNodeSchemaAsync<Nodes.SupportCaseMessage>();
     await graph.CreateNodeSchemaAsync<Nodes.Status>();
     await graph.CreateNodeSchemaAsync<Nodes.SupportChatContext>();
+    await graph.CreateNodeSchemaAsync<Nodes.Character>();
+    await graph.CreateNodeSchemaAsync<Nodes.Species>();
+    await graph.CreateNodeSchemaAsync<Nodes.Organization>();
     await graph.CreateEdgeSchemaAsync(typeof(Edges));
 }
 
@@ -107,7 +115,7 @@ async Task UploadDataAsync(Graph graph)
     logger.LogInformation("Ingesting {0:n0} cases", cases.Length);
     foreach (var supportCase in cases.OrderBy(t => t.Time))
     {
-        var supportCaseNode = graph.TryAdd(new Nodes.SupportCase() { Id = $"SC-{supportCaseId:0000}", Content = supportCase.Content, Summary = supportCase.Summary, Time = supportCase.Time, Status = supportCase.Status });
+        var supportCaseNode = graph.TryAdd(new Nodes.SupportCase() { Id = $"SC-{supportCaseId:0000}", Content = supportCase.Content, CaseSummary = supportCase.Summary, Time = supportCase.Time, Status = supportCase.Status });
 
         var statusNode = graph.TryAdd(new Nodes.Status { Value = supportCase.Status });
         graph.UnlinkExcept(supportCaseNode, statusNode, Edges.HasStatus, Edges.StatusOf);
@@ -169,6 +177,144 @@ async Task UploadDataAsync(Graph graph)
 }
 
 
+async Task UploadStapiDataAsync(Graph graph)
+{
+    var http = new HttpClient();
+    http.BaseAddress = new Uri("https://stapi.co/api/v1/rest/");
+
+    // Fetch all species
+    var allSpecies = new List<StapiSpecies>();
+    int page = 0;
+    while (true)
+    {
+        var json = await http.GetStringAsync($"species/search?pageNumber={page}&pageSize=50");
+        var result = JsonConvert.DeserializeObject<StapiSpeciesResponse>(json);
+        allSpecies.AddRange(result.Species);
+        if (result.Page.LastPage) break;
+        page++;
+    }
+
+    logger.LogInformation("Ingesting {0:n0} species", allSpecies.Count);
+    foreach (var species in allSpecies)
+    {
+        var traits = new List<string>();
+        if (species.HumanoidSpecies == true)   traits.Add("Humanoid");
+        if (species.ReptilianSpecies == true)  traits.Add("Reptilian");
+        if (species.TelepathicSpecies == true) traits.Add("Telepathic");
+        if (species.WarpCapableSpecies == true) traits.Add("Warp-capable");
+        if (species.ExtinctSpecies == true)    traits.Add("Extinct");
+
+        var desc = traits.Count > 0 ? string.Join(", ", traits) : "";
+        var homeworld = species.Homeworld?.Name ?? "";
+
+        var speciesNode = graph.TryAdd(new Nodes.Species()
+        {
+            Uid = species.Uid,
+            Name = species.Name,
+            Homeworld = homeworld,
+            Description = desc
+        });
+        graph.AddAlias(speciesNode, Mosaik.Core.Language.Any, species.Name, ignoreCase: false);
+    }
+
+    // Fetch all organizations
+    var allOrgs = new List<StapiOrganization>();
+    page = 0;
+    while (true)
+    {
+        var json = await http.GetStringAsync($"organization/search?pageNumber={page}&pageSize=50");
+        var result = JsonConvert.DeserializeObject<StapiOrganizationResponse>(json);
+        allOrgs.AddRange(result.Organizations);
+        if (result.Page.LastPage) break;
+        page++;
+    }
+
+    logger.LogInformation("Ingesting {0:n0} organizations", allOrgs.Count);
+    foreach (var org in allOrgs)
+    {
+        var types = new List<string>();
+        if (org.Government == true)              types.Add("Government");
+        if (org.MilitaryOrganization == true)    types.Add("Military");
+        if (org.MedicalOrganization == true)     types.Add("Medical");
+        if (org.ResearchOrganization == true)    types.Add("Research");
+        if (org.SportOrganization == true)       types.Add("Sport");
+
+        var desc = types.Count > 0 ? string.Join(", ", types) : "";
+
+        var orgNode = graph.TryAdd(new Nodes.Organization()
+        {
+            Uid = org.Uid,
+            Name = org.Name,
+            Description = desc
+        });
+        graph.AddAlias(orgNode, Mosaik.Core.Language.Any, org.Name, ignoreCase: false);
+    }
+
+    var allCharacters = new List<StapiCharacter>();
+    int maxPages = 20;
+    page = 0;
+    while (page < maxPages)
+    {
+        var json = await http.GetStringAsync($"character/search?pageNumber={page}&pageSize=50");
+        var result = JsonConvert.DeserializeObject<StapiCharacterResponse>(json);
+        allCharacters.AddRange(result.Characters);
+        if (result.Page.LastPage) break;
+        page++;
+    }
+
+    logger.LogInformation("Ingesting {0:n0} characters with relationships", allCharacters.Count);
+    int count = 0;
+    foreach (var character in allCharacters)
+    {
+        var charNode = graph.TryAdd(new Nodes.Character()
+        {
+            Uid = character.Uid,
+            Name = character.Name,
+            Gender = character.Gender ?? "",
+            YearOfBirth = character.YearOfBirth?.ToString() ?? "",
+            YearOfDeath = character.YearOfDeath?.ToString() ?? ""
+        });
+        graph.AddAlias(charNode, Mosaik.Core.Language.Any, character.Name, ignoreCase: false);
+
+        // Fetch character detail to get species and organization links
+        try
+        {
+            var detailJson = await http.GetStringAsync($"character?uid={character.Uid}");
+            var detail = JsonConvert.DeserializeObject<StapiCharacterFull>(detailJson);
+
+            if (detail?.Character?.CharacterSpecies != null)
+            {
+                foreach (var sp in detail.Character.CharacterSpecies)
+                {
+                    var speciesNode = Node.FromKey(nameof(Nodes.Species), sp.Uid);
+                    graph.Link(speciesNode, charNode, Edges.HasCharacter, Edges.CharacterOf);
+                }
+            }
+
+            if (detail?.Character?.Organizations != null)
+            {
+                foreach (var org in detail.Character.Organizations)
+                {
+                    var orgNode = Node.FromKey(nameof(Nodes.Organization), org.Uid);
+                    graph.Link(orgNode, charNode, Edges.HasMember, Edges.MemberOf);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning("Failed to fetch detail for {0}: {1}", character.Name, ex.Message);
+        }
+
+        count++;
+        if (count % 50 == 0)
+        {
+            logger.LogInformation("Processed {0}/{1} characters", count, allCharacters.Count);
+        }
+    }
+
+    await graph.CommitPendingAsync();
+}
+
 async Task TestEndpointsAsync(string endpointToken)
 {
     //Endpoints can be called using the EndpointsClient wrapper class.
@@ -180,7 +326,7 @@ async Task TestEndpointsAsync(string endpointToken)
     var responsePooling = await endpointClient.CallAsync<string>("long-running-hello-world");
     Console.WriteLine($"Endpoint 'long-running-hello-world' answered with {responsePooling}");
 
-    var responseReplay = await endpointClient.CallAsync<string, string>("replay", "Why don’t APIs ever get lost? Because they always REST.");
+    var responseReplay = await endpointClient.CallAsync<string, string>("replay", "Why donï¿½t APIs ever get lost? Because they always REST.");
     Console.WriteLine($"Endpoint 'replay' answered with {responseReplay}");
 
     var responseJson = await endpointClient.CallAsync<Nodes.Device, Nodes.Device>("replay", new Nodes.Device() { Name = "Test Device" });
