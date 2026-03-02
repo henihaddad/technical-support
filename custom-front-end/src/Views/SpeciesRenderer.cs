@@ -1,0 +1,72 @@
+using UID;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Mosaik;
+using Mosaik.Components;
+using Mosaik.Schema;
+using Mosaik.Views;
+using Tesserae;
+using static Tesserae.UI;
+using static Mosaik.UI;
+
+using H5;
+using static H5.Core.dom;
+using Node = Mosaik.Schema.Node;
+
+namespace TechnicalSupport.FrontEnd
+{
+    public class SpeciesRenderer : INodeRenderer
+    {
+        public string NodeType    => N.Species.Type;
+        public string DisplayName => "Species";
+        public string LabelField  => "Name";
+        public string Color       => "#8e44ad";
+        public UIcons Icon        => UIcons.PawClaws;
+
+        public CardContent CompactView(Node node)
+        {
+            return CardContent(Header(this, node), null);
+        }
+
+        public async Task<CardContent> PreviewAsync(Node node, Parameters state)
+        {
+            return CardContent(Header(this, node), CreateView(node, state));
+        }
+
+        public async Task<IComponent> ViewAsync(Node node, Parameters state)
+        {
+            return (await PreviewAsync(node, state)).Merge();
+        }
+
+        private IComponent CreateView(Node node, Parameters state)
+        {
+            return Pivot().S().Pivot("overview",   PivotTitle("Overview"),   () => RenderOverview(node))
+                              .Pivot("characters", PivotTitle("Characters"), () => RenderCharacters(node))
+                              .Pivot("graph",      PivotTitle("Graph"),      () => RenderGraph(node));
+        }
+
+        private IComponent RenderOverview(Node node)
+        {
+            return VStack().S().Children(
+                        Label("Name").WS().Inline().AutoWidth().SetContent(TextBlock(node.GetString(N.Species.Name))),
+                        Label("Homeworld").WS().Inline().AutoWidth().SetContent(TextBlock(node.GetString(N.Species.Homeworld))),
+                        Label("Traits").WS().Inline().AutoWidth().SetContent(TextBlock(node.GetString(N.Species.Description))));
+        }
+
+        private IComponent RenderCharacters(Node node)
+        {
+            return Neighbors(() => Mosaik.API.Query.StartAt(node.UID).Out(N.Character.Type, E.HasCharacter).TakeAll().GetUIDsAsync(),
+                             new[] { N.Character.Type }, showSearchBox: true, facetDisplay: FacetDisplayOptions.Visible);
+        }
+
+        private IComponent RenderGraph(Node node)
+        {
+            return Defer(async () =>
+            {
+                var queryResult = await Mosaik.API.Query.StartAt(node.UID).Out().TakeAll().GetUIDsAsync();
+                return GraphExplorerView.ComponentFor(enableInteraction: true, uids: queryResult.UIDs.Append(node.UID).ToArray()).S();
+            }).S();
+        }
+    }
+}

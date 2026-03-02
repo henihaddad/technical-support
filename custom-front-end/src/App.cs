@@ -28,6 +28,8 @@ namespace TechnicalSupport.FrontEnd
             Router.Register("#/parts", (state) => App.ShowDefault(new PartsView(state)));
             Router.Register("#/support-cases", (state) => App.ShowDefault(new SupportCasesView(state)));
             Router.Register("#/support", (state) => App.ShowDefault(new SupportChat(state)));
+            Router.Register("#/species", (state) => App.ShowDefault(new SpeciesView(state)));
+            Router.Register("#/organizations", (state) => App.ShowDefault(new OrganizationsView(state)));
 
             App.Initialize(Configure, OnLoad);
         }
@@ -62,6 +64,14 @@ namespace TechnicalSupport.FrontEnd
                         var kbCases= new SidebarButton("support-cases", UIcons.CommentsQuestion, "Support Cases").OnClick(() => Router.Navigate("#/support-cases"));
                         tracker.Add(() => kbCases.IsSelected = window.location.hash.Contains("#/support-cases"));
                         sidebar.AddContent(kbCases);
+
+                        var kbSpecies = new SidebarButton("species", UIcons.PawClaws, "Species").OnClick(() => Router.Navigate("#/species"));
+                        tracker.Add(() => kbSpecies.IsSelected = window.location.hash.Contains("#/species"));
+                        sidebar.AddContent(kbSpecies);
+
+                        var kbOrgs = new SidebarButton("organizations", UIcons.Building, "Organizations").OnClick(() => Router.Navigate("#/organizations"));
+                        tracker.Add(() => kbOrgs.IsSelected = window.location.hash.Contains("#/organizations"));
+                        sidebar.AddContent(kbOrgs);
                         break;
                     }
                     case App.Sidebar.Mode.UserPreferences:
