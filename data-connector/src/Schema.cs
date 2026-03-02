@@ -36,7 +36,7 @@ public static class Schema
         public class SupportCase
         {
             [Key] public string Id { get; set; }
-            [Property] public string Summary { get; set; }
+            [Property] public string CaseSummary { get; set; }
             [Property] public string Content { get; set; }
             [Property] public string Status { get; set; }
             [Timestamp] public DateTimeOffset Time { get; set; }
@@ -63,6 +63,33 @@ public static class Schema
             [Key] public string ID { get; set; }
             [Property] public string Topic { get; set; }
         }
+
+        [Node]
+        public class Character
+        {
+            [Key] public string Uid { get; set; }
+            [Property] public string Name { get; set; }
+            [Property] public string Gender { get; set; }
+            [Property] public string YearOfBirth { get; set; }
+            [Property] public string YearOfDeath { get; set; }
+        }
+
+        [Node]
+        public class Species
+        {
+            [Key] public string Uid { get; set; }
+            [Property] public string Name { get; set; }
+            [Property] public string Homeworld { get; set; }
+            [Property] public string Description { get; set; }
+        }
+
+        [Node]
+        public class Organization
+        {
+            [Key] public string Uid { get; set; }
+            [Property] public string Name { get; set; }
+            [Property] public string Description { get; set; }
+        }
     }
 
     public static class Edges
@@ -77,5 +104,10 @@ public static class Schema
         public const string StatusOf        = nameof(StatusOf);
         public const string HasMessage      = nameof(HasMessage);
         public const string MessageOf       = nameof(MessageOf);
+
+        public const string HasCharacter    = nameof(HasCharacter);
+        public const string CharacterOf     = nameof(CharacterOf);
+        public const string HasMember       = nameof(HasMember);
+        public const string MemberOf        = nameof(MemberOf);
     }
 }

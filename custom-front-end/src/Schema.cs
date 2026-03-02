@@ -60,6 +60,30 @@ namespace TechnicalSupport.FrontEnd
             public const string Type = nameof(PotentialIdentifiers);
             public const string Value = nameof(Value);
         }
+        public sealed class Character
+        {
+            public const string Type = nameof(Character);
+            public const string Uid = nameof(Uid);
+            public const string Name = nameof(Name);
+            public const string Gender = nameof(Gender);
+            public const string YearOfBirth = nameof(YearOfBirth);
+            public const string YearOfDeath = nameof(YearOfDeath);
+        }
+        public sealed class Species
+        {
+            public const string Type = nameof(Species);
+            public const string Uid = nameof(Uid);
+            public const string Name = nameof(Name);
+            public const string Homeworld = nameof(Homeworld);
+            public const string Description = nameof(Description);
+        }
+        public sealed class Organization
+        {
+            public const string Type = nameof(Organization);
+            public const string Uid = nameof(Uid);
+            public const string Name = nameof(Name);
+            public const string Description = nameof(Description);
+        }
     }
 
 
@@ -75,6 +99,10 @@ namespace TechnicalSupport.FrontEnd
         public const string StatusOf = nameof(StatusOf);
         public const string HasMessage = nameof(HasMessage);
         public const string MessageOf = nameof(MessageOf);
+        public const string HasCharacter = nameof(HasCharacter);
+        public const string CharacterOf = nameof(CharacterOf);
+        public const string HasMember = nameof(HasMember);
+        public const string MemberOf = nameof(MemberOf);
     }
 
 }
