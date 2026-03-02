@@ -2,6 +2,12 @@
 
 This repository contains a sample dataset designed for learning how to develop and deploy a [Curiosity Workspace](https://curiosity.ai/workspace) instance with custom data. The dataset includes fictional but realistic data on products, parts, and customer support cases generated using a large language model (LLM). This data can be used to experiment with Curiosity's knowledge graph, natural language processing and AI-powered features.
 
+## Demo
+
+![Pipeline](pipeline.gif)
+
+![Demo](demo.gif)
+
 ## 🛠️ Pre-requisites
 
 Before building or running this project, ensure the following tools are installed on your system:
