@@ -16,11 +16,11 @@
     <PackageReference Include="h5.core" Version="26.2.64455" />
     <PackageReference Include="h5.Newtonsoft.Json" Version="26.2.64456" />
     <PackageReference Include="Plotly.H5" Version="2025.9.61626" />
-    <PackageReference Include="Tesserae" Version="2026.2.64600" />
-    <PackageReference Include="Mosaik.FrontEnd.API" Version="26.2.64637" />
-    <PackageReference Include="Mosaik.FrontEnd.Core" Version="26.2.64637" />
-    <PackageReference Include="Mosaik.FrontEnd.Admin" Version="26.2.64637" />
-    <PackageReference Include="Mosaik.FrontEnd" Version="26.2.64637" />
+    <PackageReference Include="Tesserae" Version="2026.2.64745" />
+    <PackageReference Include="Mosaik.FrontEnd.API" Version="26.3.64827" />
+    <PackageReference Include="Mosaik.FrontEnd.Core" Version="26.3.64827" />
+    <PackageReference Include="Mosaik.FrontEnd.Admin" Version="26.3.64827" />
+    <PackageReference Include="Mosaik.FrontEnd" Version="26.3.64827" />
   </ItemGroup>
   <ItemGroup>
     <None Update="h5\assets\css\support-style.css">
@@ -34,6 +34,6 @@
     <!--<Exec Command="powershell.exe .\zip-output-folder.ps1 $(ProjectDir)bin\$(Configuration)\netstandard2.0\h5\" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />-->
     
     <!--You can alternativelly remove the previous line and upload directly the front-end to your Curiosity workspace using the Curiosity CLI tool. You'll need to install the tool using 'dotnet tool install -g Curiosity.CLI'  and generate a token in the workspace for 'Interface Upload'-->
-    <Exec Command="curiosity-cli upload-front-end -s http://localhost:8080/ -t eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJGb3IiOiJGUk9OVF9FTkRfVVBMT0FEIiwiQ3JlYXRlZEJ5IjoiYWRtaW4iLCJQdXJwb3NlIjoidGVzdCIsIm5iZiI6MTc2MjE5MTc0NCwiZXhwIjoyMDc3NTUxODA0LCJpc3MiOiJDdXJpb3NpdHkuU2VjdXJpdHkuQmVhcmVyIiwiYXVkIjoiQ3VyaW9zaXR5In0.PRLV2hdn4DkW00D-mj59Y-YWC23UA8S12xU7NPMlT80 -p $(ProjectDir)bin/$(Configuration)/netstandard2.0/h5/" ContinueOnError="true" />
+    <Exec Command="curiosity-cli upload-front-end -s http://localhost:8080/ -t eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJGb3IiOiJBUEkiLCJDcmVhdGVkQnkiOiJhZG1pbiIsIlB1cnBvc2UiOiJ0ZXN0IGxpYnJhcnkgdG9rZW4iLCJuYmYiOjE3NzI0MTE4MTgsImV4cCI6MjA4Nzc3MTg3OCwiaXNzIjoiQ3VyaW9zaXR5LlNlY3VyaXR5LkJlYXJlciIsImF1ZCI6IkN1cmlvc2l0eSJ9.L8AusylTQa9sNlY9x5vIChRl14pOfZqTs93x1YDIpCE -p $(ProjectDir)bin/$(Configuration)/netstandard2.0/h5/" ContinueOnError="true" />
   </Target>
 </Project>
